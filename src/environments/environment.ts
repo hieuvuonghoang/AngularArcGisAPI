@@ -3,7 +3,34 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  mapUrl: {
+    baseMapUrl:
+      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/Hosted/VNBaseMap_2000/VectorTileServer',
+    layerPhimAnhUrl:
+      // 'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/MangLuoiDien/PhimAnh/FeatureServer',
+      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/Administrative/PhimAnh/FeatureServer',
+  },
+  userInfo: {
+    username: 'hvquang',
+    password: '123454321Aa@',
+  },
+  serverInfo: {
+    server: 'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services',
+    tokenServiceUrl:
+      'https://evnnpt.ftiglobal.com.vn/arcgis/sharing/rest/generateToken',
+    shortLivedTokenValidity: 30,
+  },
+  centerPoint: {
+    x: 685509.468,
+    y: 1790410.454,
+    spatialReference: { wkid: 3405 },
+  },
+  scale: 5000000,
+  layerId: {
+    layerBaseMapId: '1',
+    layerPhimAnhId: '2',
+  },
 };
 
 /*
