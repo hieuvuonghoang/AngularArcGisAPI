@@ -21,17 +21,26 @@ import Basemap from '@arcgis/core/Basemap';
 import esriConfig from '@arcgis/core/config.js';
 import { from } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { NgbModal, NgbModalConfig } from '@ng-bootstrap/ng-bootstrap';
+import { ModalPhimAnhComponent } from './map-modal/modal-phim-anh/modal-phim-anh.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
+  providers: [NgbModalConfig, NgbModal],
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'AngularArcGisAPI';
-
   public view!: MapView;
   private fLPhimAnh!: FeatureLayer;
+  private dangMoModalPhimAnh: boolean = false;
+
+  constructor(config: NgbModalConfig, private modalService: NgbModal) {
+    // config.backdrop = 'static';
+    config.size = 'xl';
+    config.scrollable = true;
+  }
 
   // The <div> where we will place the map
   @ViewChild('mapViewNode', { static: true }) private mapViewEl!: ElementRef;
@@ -117,63 +126,38 @@ export class AppComponent implements OnInit, OnDestroy {
 
   mapEventHandler() {
     this.view.on('click', (event) => {
-      // this.deleteFeature();
-      // this.fLPhimAnh.queryFeatureCount().then((result) => {
-      //   console.log(result);
-      // });
-      this.addFeature(event);
-      // this.fLPhimAnh.queryFeatures().then((result) => {
-      //   console.log(result.features);
-      // });
-      // console.log(this.fLPhimAnh.capabilities.operations.supportsAdd);
-      // const point = new Point({
-      //   x: event.mapPoint.x,
-      //   y: event.mapPoint.y,
-      //   latitude: event.mapPoint.y,
-      //   longitude: event.mapPoint.x,
-      // });
-      // console.log(point);
-      // const attributes = {
-      //   MA_DTQS: 'ABD',
-      //   THIETBICHUP: 'test',
-      //   X: point.x,
-      //   Y: point.y,
-      // };
-      // const addFeature = new Graphic({
-      //   geometry: point,
-      //   attributes: attributes,
-      // });
-      // this.fLPhimAnh
-      //   .applyEdits({
-      //     addFeatures: [addFeature],
-      //   })
-      //   .then((result) => {
-      //     console.log(result);
-      //   })
-      //   .catch((error) => {
-      //     console.error(error);
-      //   });
-      // // only include graphics from fLPhimAnh in the hitTest
-      // const opts = {
-      //   include: this.fLPhimAnh,
-      // };
-      // this.view.hitTest(event, opts).then((response) => {
-      //   // check if a feature is returned from the fLPhimAnh
-      //   if (response.results.length) {
-      //     const graphic = response.results[0].graphic;
-      //     const attributes = graphic.attributes;
-      //     const queryParams = this.fLPhimAnh.createQuery();
-      //     console.log(`OBJECTID = ${attributes['OBJECTID']}`);
-      //     queryParams.where = `OBJECTID = ${attributes['OBJECTID']}`;
-      //     queryParams.outFields = ['MA_DTQS'];
-      //     this.fLPhimAnh.queryFeatures(queryParams).then(function (results) {
-      //       // prints the array of result graphics to the console
-      //       console.log(results.features[0].attributes['MA_DTQS']);
-      //     });
-      //     // do something with the graphic
-      //   }
-      // });
+      this.hitTestLayerPhimAnhClick(event);
     });
+  }
+
+  hitTestLayerPhimAnhClick(event: any) {
+    const opts = {
+      include: this.fLPhimAnh,
+    };
+    this.view.hitTest(event, opts).then((response) => {
+      // check if a feature is returned from the fLPhimAnh
+      if (response.results.length) {
+        const graphic = response.results[0].graphic;
+        const attributes = graphic.attributes;
+        const queryParams = this.fLPhimAnh.createQuery();
+        console.log(`OBJECTID = ${attributes['OBJECTID']}`);
+        queryParams.where = `OBJECTID = ${attributes['OBJECTID']}`;
+        queryParams.outFields = ['MA_DTQS'];
+        this.fLPhimAnh.queryFeatures(queryParams).then((results) => {
+          // prints the array of result graphics to the console
+          console.log(results.features[0].attributes['MA_DTQS']);
+          const maDTQS = results.features[0].attributes['MA_DTQS'];
+          this.openModalPhimAnh(event, maDTQS);
+        });
+        // do something with the graphic
+      }
+    });
+  }
+
+  openModalPhimAnh(event: any, maDTQS: string) {
+    let modalRef = this.modalService.open(ModalPhimAnhComponent);
+    modalRef.componentInstance.event = event;
+    modalRef.componentInstance.maDTQS = maDTQS;
   }
 
   addFeature(event: any) {

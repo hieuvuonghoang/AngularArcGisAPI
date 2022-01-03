@@ -31,6 +31,9 @@ export const environment = {
     layerBaseMapId: '1',
     layerPhimAnhId: '2',
   },
+  apiUrl: 'https://localhost:44363/api',
+  jwtToken:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYzMTZlNTNkLThmMGEtNDJkOC1hODM0LWI3YTY4NWFhMmM5MCIsInRlbnRrIjoidGVzdDAxIiwibmJmIjoxNjQxMTc3MTM5LCJleHAiOjE2NDExODA3MzksImlhdCI6MTY0MTE3NzEzOX0.xkn1OkPviN2PldTxo2pV4Kwzj2XluUFpnuqGe2JzQQ0',
 };
 
 /*
