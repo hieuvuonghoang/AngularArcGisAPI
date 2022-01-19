@@ -26,7 +26,7 @@ export const environment = {
     y: 1790410.454,
     spatialReference: { wkid: 3405 },
   },
-  scale: 5000000,
+  scale: 10000000,
   layerId: {
     layerBaseMapId: '1',
     layerPhimAnhId: '2',

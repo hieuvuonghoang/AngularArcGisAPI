@@ -30,8 +30,9 @@ import { ModalPhimAnhComponent } from './map-modal/modal-phim-anh/modal-phim-anh
   styleUrls: ['./app.component.css'],
   providers: [NgbModalConfig, NgbModal],
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
   title = 'AngularArcGisAPI';
+<<<<<<< HEAD
   public view!: MapView;
   private fLPhimAnh!: FeatureLayer;
   private dangMoModalPhimAnh: boolean = false;
@@ -210,6 +211,19 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.view) {
       // destroy the map view
       this.view.destroy();
+=======
+  openedSlideBar = false;
+  openedSlideBarPhimAnh = false;
+  showPopupPhimAnh = false;
+
+  ngOnInit(): any {}
+
+  openSlideBarPhimAnh(event: any) {
+    if (event && !this.openedSlideBarPhimAnh) {
+      this.openedSlideBarPhimAnh = true;
+    } else if (!event && this.openedSlideBarPhimAnh) {
+      this.openedSlideBarPhimAnh = false;
+>>>>>>> 582460cc42b03e0e4e86685ea1fd0b3a07ed4354
     }
   }
 }
