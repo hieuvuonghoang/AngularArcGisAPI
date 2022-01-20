@@ -26,7 +26,7 @@ export const environment = {
     y: 1790410.454,
     spatialReference: { wkid: 3405 },
   },
-  scale: 10000000,
+  scale: 500000,
 };
 
 /*

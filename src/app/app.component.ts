@@ -1,26 +1,5 @@
-import {
-  Component,
-  ElementRef,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
-
-import esriId from '@arcgis/core/identity/IdentityManager';
-import ServerInfo from '@arcgis/core/identity/ServerInfo';
-
-import MapView from '@arcgis/core/views/MapView';
-import TileInfo from '@arcgis/core/layers/support/TileInfo';
-import Map from '@arcgis/core/Map';
-import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
-import Point from '@arcgis/core/geometry/Point';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import Graphic from '@arcgis/core/Graphic';
-
-import Basemap from '@arcgis/core/Basemap';
-import esriConfig from '@arcgis/core/config.js';
-import { from } from 'rxjs';
-import { environment } from 'src/environments/environment';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { PopupPhimAnh } from './model';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +11,7 @@ export class AppComponent implements OnInit {
   openedSlideBar = false;
   openedSlideBarPhimAnh = false;
   showPopupPhimAnh = false;
+  popupPhimAnh!: PopupPhimAnh;
 
   ngOnInit(): any {}
 
@@ -40,6 +20,26 @@ export class AppComponent implements OnInit {
       this.openedSlideBarPhimAnh = true;
     } else if (!event && this.openedSlideBarPhimAnh) {
       this.openedSlideBarPhimAnh = false;
+    }
+  }
+
+  openPopupPhimAnh(event: PopupPhimAnh) {
+    if (
+      (this.popupPhimAnh &&
+        this.popupPhimAnh.isShow &&
+        event.isShow &&
+        this.popupPhimAnh.iD == event.iD) ||
+      (this.popupPhimAnh && !this.popupPhimAnh.isShow && !event.isShow)
+    ) {
+      return;
+    }
+    this.popupPhimAnh = event;
+    const el = document.getElementById('app-map-view')!;
+    if (this.popupPhimAnh.screenCoordinate.y + 124 > el.clientHeight) {
+      this.popupPhimAnh.screenCoordinate.y -= 124;
+    }
+    if (this.popupPhimAnh.screenCoordinate.x + 300 > el.clientWidth) {
+      this.popupPhimAnh.screenCoordinate.x -= 300;
     }
   }
 }

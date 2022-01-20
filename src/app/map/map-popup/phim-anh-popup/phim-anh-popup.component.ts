@@ -1,15 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-phim-anh-popup',
   templateUrl: './phim-anh-popup.component.html',
-  styleUrls: ['./phim-anh-popup.component.css']
+  styleUrls: ['./phim-anh-popup.component.css'],
 })
 export class PhimAnhPopupComponent implements OnInit {
+  constructor() {}
 
-  constructor() { }
-
-  ngOnInit(): void {
-  }
-
+  ngOnInit(): void {}
 }
