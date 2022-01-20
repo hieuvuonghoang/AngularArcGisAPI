@@ -20,6 +20,7 @@ import Basemap from '@arcgis/core/Basemap';
 import esriConfig from '@arcgis/core/config.js';
 import { from } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { PopupPhimAnh, ScreenCordinate } from 'src/app/model';
 
 @Component({
   selector: 'app-map-view',
@@ -32,8 +33,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
   fLViewPhimAnh!: __esri.FeatureLayerView;
   fLPhimAnhHighLight: __esri.Handle | null = null;
   iDFLPhimAnhHighLight!: number;
+  // popupPhimAnh!: PopupPhimAnh;
   @ViewChild('mapViewNode', { static: true }) private mapViewEl!: ElementRef;
   @Output() onClickPhimAnhEvent = new EventEmitter<boolean>();
+  @Output() onHoverPhimAnhEvent = new EventEmitter<PopupPhimAnh>();
 
   constructor() {}
 
@@ -134,7 +137,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
       if (response.results.length) {
         const graphic = response.results[0].graphic;
         const attributes = graphic.attributes;
-        console.log(attributes);
         this.onClickPhimAnhEvent.emit(true);
       } else {
         this.onClickPhimAnhEvent.emit(false);
@@ -156,6 +158,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
         this.changeMouseCursor('pointer');
         const graphic = response.results[0].graphic;
         const iD = graphic.attributes.OBJECTID;
+        this.onHoverPhimAnhEvent.emit(
+          new PopupPhimAnh({
+            screenCoordinate: new ScreenCordinate({ x: event.x, y: event.y }),
+            isShow: true,
+            iD: iD,
+          })
+        );
         if (this.fLPhimAnhHighLight && this.iDFLPhimAnhHighLight !== iD) {
           this.fLPhimAnhHighLight.remove();
           this.fLPhimAnhHighLight = null;
@@ -168,6 +177,12 @@ export class MapViewComponent implements OnInit, OnDestroy {
         this.iDFLPhimAnhHighLight = iD;
       } else {
         this.changeMouseCursor('default');
+        this.onHoverPhimAnhEvent.emit(
+          new PopupPhimAnh({
+            screenCoordinate: new ScreenCordinate({ x: event.x, y: event.y }),
+            isShow: false,
+          })
+        );
         if (this.fLPhimAnhHighLight) {
           this.fLPhimAnhHighLight.remove();
           this.fLPhimAnhHighLight = null;
