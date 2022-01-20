@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { MapViewComponent } from './map/map-view';
 import { PopupPhimAnh } from './model';
 
 @Component({
@@ -12,6 +13,8 @@ export class AppComponent implements OnInit {
   openedSlideBarPhimAnh = false;
   showPopupPhimAnh = false;
   popupPhimAnh!: PopupPhimAnh;
+
+  @ViewChild(MapViewComponent) mapViewChild!: MapViewComponent;
 
   ngOnInit(): any {}
 
@@ -40,6 +43,12 @@ export class AppComponent implements OnInit {
     }
     if (this.popupPhimAnh.screenCoordinate.x + 300 > el.clientWidth) {
       this.popupPhimAnh.screenCoordinate.x -= 300;
+    }
+  }
+
+  onZoom() {
+    if (this.mapViewChild) {
+      this.mapViewChild.onZoom();
     }
   }
 }

@@ -15,6 +15,7 @@ import Map from '@arcgis/core/Map';
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 import Point from '@arcgis/core/geometry/Point';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import LayerList from '@arcgis/core/widgets/LayerList';
 import Graphic from '@arcgis/core/Graphic';
 import Basemap from '@arcgis/core/Basemap';
 import esriConfig from '@arcgis/core/config.js';
@@ -28,42 +29,55 @@ import { PopupPhimAnh, ScreenCordinate } from 'src/app/model';
   styleUrls: ['./map-view.component.css'],
 })
 export class MapViewComponent implements OnInit, OnDestroy {
-  view!: MapView;
-  fLPhimAnh!: FeatureLayer;
-  fLViewPhimAnh!: __esri.FeatureLayerView;
-  fLPhimAnhHighLight: __esri.Handle | null = null;
-  iDFLPhimAnhHighLight!: number;
-  // popupPhimAnh!: PopupPhimAnh;
+  private view!: MapView;
+  //PhimAnh
+  private fLPhimAnh!: FeatureLayer;
+  private fLViewPhimAnh!: __esri.FeatureLayerView;
+  private fLPhimAnhHighLight: __esri.Handle | null = null;
+  private iDFLPhimAnhHighLight!: number;
+  //DuongDay
+  private fLDuongDay!: FeatureLayer;
+  private fLViewDuongDay!: __esri.FeatureLayerView;
+  private fLDuongDayHighLight: __esri.Handle | null = null;
+  private iDFLDuongDayHighLight!: number;
+  //CotDien
+  private fLCotDien!: FeatureLayer;
+  private fLViewCotDien!: __esri.FeatureLayerView;
+  private fLCotDienHighLight: __esri.Handle | null = null;
+  private iDFLCotDienHighLight!: number;
+
   @ViewChild('mapViewNode', { static: true }) private mapViewEl!: ElementRef;
-  @Output() onClickPhimAnhEvent = new EventEmitter<boolean>();
-  @Output() onHoverPhimAnhEvent = new EventEmitter<PopupPhimAnh>();
+  @Output() private onClickPhimAnhEvent = new EventEmitter<boolean>();
+  @Output() private onHoverPhimAnhEvent = new EventEmitter<PopupPhimAnh>();
 
   constructor() {}
 
-  initializeMap(token: string): Promise<any> {
+  private initializeMap(token: string): Promise<any> {
     const container = this.mapViewEl.nativeElement;
     const scale = environment.scale;
     const centerPoint = new Point(environment.centerPoint);
     const baseMapUrl = environment.mapUrl.baseMapUrl;
     const layerPhimAnhUrl = environment.mapUrl.layerPhimAnhUrl;
+    const layerDuongDayUrl = environment.mapUrl.layerDuongDayUrl;
+    const layerCotDienUrl = environment.mapUrl.layerCotDienUrl;
+    const serviceUrls = [
+      baseMapUrl,
+      layerPhimAnhUrl,
+      layerDuongDayUrl,
+      layerCotDienUrl,
+    ];
 
     //#region  "esriConfig"
     esriConfig.assetsPath = './assets';
 
-    esriConfig.request.interceptors?.push({
-      urls: baseMapUrl,
-      before: function (params) {
-        params.requestOptions.query = params.requestOptions.query || {};
-        params.requestOptions.query.token = token;
-      },
-    });
-
-    esriConfig.request.interceptors?.push({
-      urls: layerPhimAnhUrl,
-      before: function (params) {
-        params.requestOptions.query = params.requestOptions.query || {};
-        params.requestOptions.query.token = token;
-      },
+    serviceUrls.forEach((element) => {
+      esriConfig.request.interceptors?.push({
+        urls: element,
+        before: function (params) {
+          params.requestOptions.query = params.requestOptions.query || {};
+          params.requestOptions.query.token = token;
+        },
+      });
     });
     //#endregion
 
@@ -76,13 +90,21 @@ export class MapViewComponent implements OnInit, OnDestroy {
       title: 'Bản đồ nền',
     });
 
-    const layerPhimAnh = new FeatureLayer({
-      url: environment.mapUrl.layerPhimAnhUrl,
+    this.fLPhimAnh = new FeatureLayer({
+      url: layerPhimAnhUrl,
+    });
+
+    this.fLDuongDay = new FeatureLayer({
+      url: layerDuongDayUrl,
+    });
+
+    this.fLCotDien = new FeatureLayer({
+      url: layerCotDienUrl,
     });
 
     const map = new Map({
       basemap: basemap,
-      layers: [layerPhimAnh],
+      layers: [this.fLDuongDay, this.fLCotDien, this.fLPhimAnh],
     });
 
     const view = new MapView({
@@ -99,9 +121,25 @@ export class MapViewComponent implements OnInit, OnDestroy {
       },
     });
 
-    view.whenLayerView(layerPhimAnh).then((layerView) => {
+    view.whenLayerView(this.fLPhimAnh).then((layerView) => {
       this.fLViewPhimAnh = layerView;
-      this.fLPhimAnh = layerView.layer;
+    });
+
+    view.whenLayerView(this.fLDuongDay).then((layerView) => {
+      this.fLViewDuongDay = layerView;
+    });
+
+    view.whenLayerView(this.fLCotDien).then((layerView) => {
+      this.fLViewCotDien = layerView;
+    });
+
+    view.when(() => {
+      const layerList = new LayerList({
+        view: view,
+      });
+
+      // Add widget to the top right corner of the view
+      view.ui.add(layerList, 'top-right');
     });
 
     this.view = view;
@@ -117,9 +155,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
         console.log('The map is ready.');
         this.view.on('pointer-move', (event) => {
           this.highLightPhimAnh(event);
+          this.highLightDuongDay(event);
+          this.highLightCotDien(event);
         });
         this.view.on('pointer-down', (event) => {
           this.highLightPhimAnh(event);
+          this.highLightDuongDay(event);
+          this.highLightCotDien(event);
         });
         this.view.on('click', (event) => {
           this.onClickFLPhimAnh(event);
@@ -128,7 +170,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  onClickFLPhimAnh(event: any) {
+  private onClickFLPhimAnh(event: any) {
     const opts = {
       include: this.fLPhimAnh,
     };
@@ -144,11 +186,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  changeMouseCursor(cursor: string) {
+  private changeMouseCursor(cursor: string) {
     this.mapViewEl.nativeElement.style.cursor = cursor;
   }
 
-  highLightPhimAnh(event: any) {
+  private highLightPhimAnh(event: any) {
     const opts = {
       include: this.fLPhimAnh,
     };
@@ -188,6 +230,78 @@ export class MapViewComponent implements OnInit, OnDestroy {
           this.fLPhimAnhHighLight = null;
         }
       }
+    });
+  }
+
+  private highLightDuongDay(event: any) {
+    const opts = {
+      include: this.fLDuongDay,
+    };
+    this.view.hitTest(event, opts).then((response) => {
+      // check if a feature is returned from the hurricanesLayer
+      if (response.results.length) {
+        this.changeMouseCursor('pointer');
+        const graphic = response.results[0].graphic;
+        const iD = graphic.attributes.OBJECTID;
+
+        if (this.fLDuongDayHighLight && this.iDFLDuongDayHighLight !== iD) {
+          this.fLDuongDayHighLight.remove();
+          this.fLDuongDayHighLight = null;
+          return;
+        }
+        if (this.fLDuongDayHighLight) {
+          return;
+        }
+        this.fLDuongDayHighLight = this.fLViewDuongDay.highlight(iD);
+        this.iDFLDuongDayHighLight = iD;
+      } else {
+        this.changeMouseCursor('default');
+        if (this.fLDuongDayHighLight) {
+          this.fLDuongDayHighLight.remove();
+          this.fLDuongDayHighLight = null;
+        }
+      }
+    });
+  }
+
+  private highLightCotDien(event: any) {
+    const opts = {
+      include: this.fLCotDien,
+    };
+    this.view.hitTest(event, opts).then((response) => {
+      // check if a feature is returned from the hurricanesLayer
+      if (response.results.length) {
+        this.changeMouseCursor('pointer');
+        const graphic = response.results[0].graphic;
+        const iD = graphic.attributes.OBJECTID;
+        // console.log('CotDienID: ' + iD);
+        if (this.fLCotDienHighLight && this.iDFLCotDienHighLight !== iD) {
+          this.fLCotDienHighLight.remove();
+          this.fLCotDienHighLight = null;
+          return;
+        }
+        if (this.fLCotDienHighLight) {
+          return;
+        }
+        this.fLCotDienHighLight = this.fLViewCotDien.highlight(iD);
+        this.iDFLCotDienHighLight = iD;
+      } else {
+        this.changeMouseCursor('default');
+        if (this.fLCotDienHighLight) {
+          this.fLCotDienHighLight.remove();
+          this.fLCotDienHighLight = null;
+        }
+      }
+    });
+  }
+
+  onZoom() {
+    //CotDienID: 8481;
+    this.fLCotDien.definitionExpression = 'OBJECTID = 8481';
+    this.fLCotDien.queryExtent().then((response) => {
+      this.view.goTo(response.extent).catch((error) => {
+        console.error(error);
+      });
     });
   }
 

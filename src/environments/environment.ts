@@ -8,8 +8,11 @@ export const environment = {
     baseMapUrl:
       'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/Hosted/VNBaseMap_2000/VectorTileServer',
     layerPhimAnhUrl:
-      // 'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/MangLuoiDien/PhimAnh/FeatureServer',
       'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/Administrative/PhimAnh/FeatureServer',
+    layerDuongDayUrl:
+      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/MangLuoiDien/Lưới_điện_Hải_Dương/FeatureServer/4',
+    layerCotDienUrl:
+      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/MangLuoiDien/Lưới_điện_Hải_Dương/FeatureServer/3',
   },
   userInfo: {
     username: 'hvquang',
@@ -22,11 +25,11 @@ export const environment = {
     shortLivedTokenValidity: 30,
   },
   centerPoint: {
-    x: 685509.468,
-    y: 1790410.454,
+    x: 657371.0869625293,
+    y: 2318322.7898514317,
     spatialReference: { wkid: 3405 },
   },
-  scale: 500000,
+  scale: 50000,
 };
 
 /*
