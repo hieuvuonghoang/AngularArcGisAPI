@@ -6,30 +6,26 @@ export const environment = {
   production: false,
   mapUrl: {
     baseMapUrl:
-      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/Hosted/VNBaseMap_2000/VectorTileServer',
-    layerPhimAnhUrl:
-      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/Administrative/PhimAnh/FeatureServer',
-    layerDuongDayUrl:
-      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/MangLuoiDien/Lưới_điện_Hải_Dương/FeatureServer/4',
-    layerCotDienUrl:
-      'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services/MangLuoiDien/Lưới_điện_Hải_Dương/FeatureServer/3',
+      'https://gis.npt.com.vn/server/rest/services/Hosted/VietNam_Basemap_20220516/VectorTileServer',
+    mapServerMLDUrl:
+      'https://gis.npt.com.vn/server/rest/services/MangLuoiTTD/MapServer',
   },
   userInfo: {
-    username: 'hvquang',
-    password: '123454321Aa@',
+    username: 'portaladmin',
+    password: 'EVN.NPT.2022',
   },
   serverInfo: {
-    server: 'https://evnnpt.ftiglobal.com.vn/arcgis/rest/services',
+    server: 'https://gis.npt.com.vn/server/rest/services',
     tokenServiceUrl:
-      'https://evnnpt.ftiglobal.com.vn/arcgis/sharing/rest/generateToken',
+      'https://gis.npt.com.vn/portal/sharing/rest/generateToken',
     shortLivedTokenValidity: 30,
   },
   centerPoint: {
-    x: 657371.0869625293,
-    y: 2318322.7898514317,
+    x: 704653.664132111,
+    y: 1209061.7257997172,
     spatialReference: { wkid: 3405 },
   },
-  scale: 50000,
+  scale: 30000,
 };
 
 /*
