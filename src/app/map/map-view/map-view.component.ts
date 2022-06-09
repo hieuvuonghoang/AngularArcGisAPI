@@ -25,6 +25,13 @@ import Query from "@arcgis/core/tasks/support/Query";
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import IdentifyParameters from "@arcgis/core/rest/support/IdentifyParameters";
 import * as identify from "@arcgis/core/rest/identify";
+import BasemapToggle from "@arcgis/core/widgets/BasemapToggle";
+import TileLayer from "@arcgis/core/layers/TileLayer";
+import Layer from "@arcgis/core/layers/Layer";
+import Portal from "@arcgis/core/portal/Portal";
+import PortalBasemapsSource from "@arcgis/core/widgets/BasemapGallery/support/PortalBasemapsSource";
+import Expand from "@arcgis/core/widgets/Expand";
+import BasemapGallery from "@arcgis/core/widgets/BasemapGallery";
 
 @Component({
   selector: 'app-map-view',
@@ -52,6 +59,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
     //#region  "esriConfig"
     esriConfig.assetsPath = './assets';
 
+    esriConfig.apiKey =
+      'AAPKce6c0d7d41324b7498260898e4d28dc5QHG_Ioa_24tLd-SvgR914a7rGUOOciRlTgbojWFzNxZ3yVHl_CHJWzbf4XhoXxF5';
+
     serviceUrls.forEach((element) => {
       esriConfig.request.interceptors?.push({
         urls: element,
@@ -63,13 +73,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
     //#endregion
 
-    const basemap = new Basemap({
+    const baseMapOne = new Basemap({
       baseLayers: [
         new VectorTileLayer({
           url: baseMapUrl,
-        }),
+        })
       ],
       title: 'Bản đồ nền',
+      id: '8e37f0da'
     });
 
     const mapServerMLD = new MapImageLayer({
@@ -96,9 +107,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
 
     const map = new Map({
-      basemap: basemap,
+      basemap: baseMapOne,
     });
-    map.add(mapServerMLD)
+
+    map.add(mapServerMLD);
 
     const view = new MapView({
       container: container,
@@ -108,19 +120,31 @@ export class MapViewComponent implements OnInit, OnDestroy {
       },
       scale: scale,
       center: centerPoint,
-      spatialReference: { wkid: 3405 },
-      highlightOptions: {
-        color: 'orange',
-      },
     });
 
-    view.when(() => {
-      const layerList = new LayerList({
-        view: view,
-      });
+    const baseMapTwo = Basemap.fromId("arcgis-imagery-standard");
+    baseMapTwo.title = "Imagery Standard";
 
-      // Add widget to the top right corner of the view
-      view.ui.add(layerList, 'top-right');
+    const baseMapThree = Basemap.fromId("osm-standard");
+    baseMapThree.title = "Open Street Map";
+
+    baseMapOne.thumbnailUrl = "./assets/basemap-thumb/ban-do-nen.png";
+    baseMapTwo.thumbnailUrl = "./assets/basemap-thumb/imagery-standard.png";
+    baseMapThree.thumbnailUrl = "./assets/basemap-thumb/open-street-map.png";
+
+    const basemapGallery = new BasemapGallery({ source: [baseMapOne, baseMapTwo, baseMapThree], view });
+
+    const bgExpand = new Expand({
+      view,
+      content: basemapGallery,
+      expandIconClass: "esri-icon-basemap",
+      expandTooltip: "Thay đổi bản đồ nền"
+    });
+
+    view.ui.add(bgExpand, "bottom-left");
+
+    view.watch("spatialReference", ()=> {
+      console.log(view.spatialReference.wkid);
     });
 
     this.view = view;
@@ -192,7 +216,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.view) {
-      // destroy the map view
       this.view.destroy();
     }
   }
