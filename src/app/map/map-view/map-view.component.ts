@@ -17,7 +17,7 @@ import Point from '@arcgis/core/geometry/Point';
 import LayerList from '@arcgis/core/widgets/LayerList';
 import Basemap from '@arcgis/core/Basemap';
 import esriConfig from '@arcgis/core/config.js';
-import { from } from 'rxjs';
+import { debounceTime, delay, distinctUntilChanged, from, fromEvent, interval, map, Observable, of, Subject, switchMap, takeUntil } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
@@ -39,9 +39,13 @@ import BasemapGallery from "@arcgis/core/widgets/BasemapGallery";
   styleUrls: ['./map-view.component.css'],
 })
 export class MapViewComponent implements OnInit, OnDestroy {
-  private view!: MapView;
+  private _view!: MapView;
+  private _fLCotDien!: FeatureLayer;
+  private _fLTramBienAp!: FeatureLayer;
+  private _fLDuongDayDien!: FeatureLayer;
+  private _fLTranBienApDangVung!: FeatureLayer;
 
-  @ViewChild('mapViewNode', { static: true }) private mapViewEl!: ElementRef;
+  @ViewChild('mapViewNode', { static: false }) private mapViewEl!: ElementRef;
 
   constructor() {}
 
@@ -80,8 +84,17 @@ export class MapViewComponent implements OnInit, OnDestroy {
         })
       ],
       title: 'Bản đồ nền',
-      id: '8e37f0da'
     });
+
+    const baseMapTwo = Basemap.fromId("arcgis-imagery-standard");
+    baseMapTwo.title = "Imagery Standard";
+
+    const baseMapThree = Basemap.fromId("osm-standard");
+    baseMapThree.title = "Open Street Map";
+
+    baseMapOne.thumbnailUrl = "./assets/basemap-thumb/ban-do-nen.png";
+    baseMapTwo.thumbnailUrl = "./assets/basemap-thumb/imagery-standard.png";
+    baseMapThree.thumbnailUrl = "./assets/basemap-thumb/open-street-map.png";
 
     const mapServerMLD = new MapImageLayer({
       url: mapServerMLDUrl,
@@ -106,8 +119,28 @@ export class MapViewComponent implements OnInit, OnDestroy {
       ],
     });
 
+    mapServerMLD.allSublayers.forEach((subLayer) => {
+      subLayer.createFeatureLayer()
+      .then((featureLayer) => {
+        switch(featureLayer.layerId) {
+          case 0:
+            this._fLTramBienAp = featureLayer;
+            break;
+          case 1:
+            this._fLDuongDayDien = featureLayer;
+            break;
+          case 2:
+            this._fLCotDien = featureLayer;
+            break;
+          case 3:
+            this._fLTranBienApDangVung = featureLayer;
+            break;
+        }
+      });
+    });
+
     const map = new Map({
-      basemap: baseMapOne,
+      basemap: baseMapThree,
     });
 
     map.add(mapServerMLD);
@@ -122,23 +155,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
       center: centerPoint,
     });
 
-    const baseMapTwo = Basemap.fromId("arcgis-imagery-standard");
-    baseMapTwo.title = "Imagery Standard";
-
-    const baseMapThree = Basemap.fromId("osm-standard");
-    baseMapThree.title = "Open Street Map";
-
-    baseMapOne.thumbnailUrl = "./assets/basemap-thumb/ban-do-nen.png";
-    baseMapTwo.thumbnailUrl = "./assets/basemap-thumb/imagery-standard.png";
-    baseMapThree.thumbnailUrl = "./assets/basemap-thumb/open-street-map.png";
-
     const basemapGallery = new BasemapGallery({ source: [baseMapOne, baseMapTwo, baseMapThree], view });
 
     const bgExpand = new Expand({
       view,
       content: basemapGallery,
       expandIconClass: "esri-icon-basemap",
-      expandTooltip: "Thay đổi bản đồ nền"
+      expandTooltip: "Thay đổi bản đồ nền",
+      autoCollapse: true,
     });
 
     view.ui.add(bgExpand, "bottom-left");
@@ -147,50 +171,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
       console.log(view.spatialReference.wkid);
     });
 
-    this.view = view;
+    this._view = view;
 
-    return this.view.when();
-  }
-
-  private highLight(event: any) {
-    let params = new IdentifyParameters();
-    params.tolerance = 3;
-    params.layerIds = [0, 1, 2, 3];
-    params.layerOption = "all";
-    params.width = this.view.width;
-    params.height = this.view.height;
-    params.geometry = this.view.toMap(event);
-    params.mapExtent = this.view.extent;
-    params.returnGeometry = true;
-    params.returnFieldName = false;
-    identify.identify(environment.mapUrl.mapServerMLDUrl, params)
-    .then((response) => {
-      let results = response.results;
-      if(results.length != 0) {
-        setTimeout(() => {
-          this.changeMouseCursor('pointer');
-        })
-        for(let i = 0; i < results.length; i++) {
-          if(results[i].layerId == 2) {
-            const feature = results[i].feature;
-            const _highlightPoint = new SimpleMarkerSymbol({
-              size: '9px',
-              outline: {
-                color: [255, 204, 0, 0.8],
-                width: 3,
-              },
-            });
-            this.view.graphics.removeAll();
-            feature.symbol = _highlightPoint;
-            this.view.graphics.add(feature);
-          }
-        }
-      }
-      console.log(results);
-    }).catch(err => {
-      console.log(err); 
-    }).finally(() => {
-    });
+    return this._view.when();
   }
 
   ngOnInit(): void {
@@ -199,12 +182,57 @@ export class MapViewComponent implements OnInit, OnDestroy {
     from(esriId.generateToken(serverInfo, userInfo)).subscribe((result) => {
       from(this.initializeMap(result.token)).subscribe(() => {
         console.log('The map is ready.');
-        this.view.on("pointer-move", (event) => {
-          this.changeMouseCursor('default');
-          this.view.graphics.removeAll();
+        // console.log(this._fLCotDien.get<any>('parsedUrl').path);
+        // console.log(this._fLDuongDayDien.get<any>('parsedUrl').path);
+        // console.log(this._fLTramBienAp.get<any>('parsedUrl').path);
+        // console.log(this._fLTranBienApDangVung.get<any>('parsedUrl').path);
+
+        this._view.on("pointer-move", (event) => {
+          
+          // setTimeout(() => {
+          //   this.changeMouseCursor('default');
+          // }, 500)
+          // this._view.graphics.removeAll();
         });
-        this.view.on("pointer-move", ["Shift"], (event) => {
-          this.highLight(event);
+        const subject = new Subject<any>();
+        subject.pipe(
+          debounceTime(100),
+          switchMap(result => {
+            return this.highLight(result);
+          })
+        ).subscribe(response => {
+          let results = response.results;
+          // console.log(results);
+          if(results.length !== 0) {
+            console.log('pointer');
+            this.changeMouseCursor('pointer');
+            for(let i = 0; i < results.length; i++) {
+              if(results[i].layerId == 2) {
+                const feature = results[i].feature;
+                const _highlightPoint = new SimpleMarkerSymbol({
+                  size: '9px',
+                  outline: {
+                    color: [255, 204, 0, 0.8],
+                    width: 3,
+                  },
+                });
+                this._view.graphics.removeAll();
+                feature.symbol = _highlightPoint;
+                this._view.graphics.add(feature);
+              }
+            }
+          } else {
+            console.log('default');
+            
+            setTimeout(() => {
+              this.changeMouseCursor('default');
+            }, 1000)
+            this._view.graphics.removeAll();
+          }
+        });
+
+        this._view.on("pointer-move", (event) => {
+          subject.next(event);
         });
       });
     });
@@ -214,9 +242,48 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.mapViewEl.nativeElement.style.cursor = cursor;
   }
 
+  private highLight(event: any): Observable<any> {
+    let params = new IdentifyParameters();
+    params.tolerance = 10;
+    params.layerIds = [0, 1, 2, 3];
+    params.layerOption = "visible";
+    params.width = this._view.width;
+    params.height = this._view.height;
+    params.geometry = this._view.toMap(event);
+    params.mapExtent = this._view.extent;
+    params.returnGeometry = true;
+    params.returnFieldName = false;
+    return from(identify.identify(environment.mapUrl.mapServerMLDUrl, params));
+    // identify.identify(environment.mapUrl.mapServerMLDUrl, params)
+    // .then((response) => {
+    //   let results = response.results;
+    //   if(results.length != 0) {
+    //     for(let i = 0; i < results.length; i++) {
+    //       if(results[i].layerId == 2) {
+    //         const feature = results[i].feature;
+    //         const _highlightPoint = new SimpleMarkerSymbol({
+    //           size: '9px',
+    //           outline: {
+    //             color: [255, 204, 0, 0.8],
+    //             width: 3,
+    //           },
+    //         });
+    //         this._view.graphics.removeAll();
+    //         feature.symbol = _highlightPoint;
+    //         this._view.graphics.add(feature);
+    //       }
+    //     }
+    //   } else {
+    //     this._view.graphics.removeAll();
+    //   }
+    // }).catch(err => {
+    //   console.log(err); 
+    // });
+  }
+
   ngOnDestroy(): void {
-    if (this.view) {
-      this.view.destroy();
+    if (this._view) {
+      this._view.destroy();
     }
   }
 }
