@@ -92,6 +92,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
     const baseMapThree = Basemap.fromId("osm-standard");
     baseMapThree.title = "Open Street Map";
 
+    const baseMapForur = Basemap.fromId("streets");
+    baseMapForur.title = "Street Vector";
+
     baseMapOne.thumbnailUrl = "./assets/basemap-thumb/ban-do-nen.png";
     baseMapTwo.thumbnailUrl = "./assets/basemap-thumb/imagery-standard.png";
     baseMapThree.thumbnailUrl = "./assets/basemap-thumb/open-street-map.png";
@@ -155,7 +158,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
       center: centerPoint,
     });
 
-    const basemapGallery = new BasemapGallery({ source: [baseMapOne, baseMapTwo, baseMapThree], view });
+    const basemapGallery = new BasemapGallery({ source: [baseMapOne, baseMapTwo, baseMapThree, baseMapForur], view });
 
     const bgExpand = new Expand({
       view,
@@ -188,11 +191,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
         // console.log(this._fLTranBienApDangVung.get<any>('parsedUrl').path);
 
         this._view.on("pointer-move", (event) => {
-          
-          // setTimeout(() => {
-          //   this.changeMouseCursor('default');
-          // }, 500)
-          // this._view.graphics.removeAll();
+          this.changeMouseCursor('default');
+          this._view.graphics.removeAll();
         });
         const subject = new Subject<any>();
         subject.pipe(
@@ -204,16 +204,15 @@ export class MapViewComponent implements OnInit, OnDestroy {
           let results = response.results;
           // console.log(results);
           if(results.length !== 0) {
-            console.log('pointer');
-            this.changeMouseCursor('pointer');
             for(let i = 0; i < results.length; i++) {
               if(results[i].layerId == 2) {
+                this.changeMouseCursor('pointer');
                 const feature = results[i].feature;
                 const _highlightPoint = new SimpleMarkerSymbol({
-                  size: '9px',
+                  size: '15px',
                   outline: {
-                    color: [255, 204, 0, 0.8],
-                    width: 3,
+                    color: [124, 252 , 0],
+                    width: 2,
                   },
                 });
                 this._view.graphics.removeAll();
@@ -222,11 +221,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
               }
             }
           } else {
-            console.log('default');
-            
-            setTimeout(() => {
-              this.changeMouseCursor('default');
-            }, 1000)
+            this.changeMouseCursor('default');
             this._view.graphics.removeAll();
           }
         });
@@ -244,7 +239,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   private highLight(event: any): Observable<any> {
     let params = new IdentifyParameters();
-    params.tolerance = 10;
+    params.tolerance = 5;
     params.layerIds = [0, 1, 2, 3];
     params.layerOption = "visible";
     params.width = this._view.width;
@@ -252,33 +247,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     params.geometry = this._view.toMap(event);
     params.mapExtent = this._view.extent;
     params.returnGeometry = true;
-    params.returnFieldName = false;
     return from(identify.identify(environment.mapUrl.mapServerMLDUrl, params));
-    // identify.identify(environment.mapUrl.mapServerMLDUrl, params)
-    // .then((response) => {
-    //   let results = response.results;
-    //   if(results.length != 0) {
-    //     for(let i = 0; i < results.length; i++) {
-    //       if(results[i].layerId == 2) {
-    //         const feature = results[i].feature;
-    //         const _highlightPoint = new SimpleMarkerSymbol({
-    //           size: '9px',
-    //           outline: {
-    //             color: [255, 204, 0, 0.8],
-    //             width: 3,
-    //           },
-    //         });
-    //         this._view.graphics.removeAll();
-    //         feature.symbol = _highlightPoint;
-    //         this._view.graphics.add(feature);
-    //       }
-    //     }
-    //   } else {
-    //     this._view.graphics.removeAll();
-    //   }
-    // }).catch(err => {
-    //   console.log(err); 
-    // });
   }
 
   ngOnDestroy(): void {
