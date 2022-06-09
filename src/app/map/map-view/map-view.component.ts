@@ -23,6 +23,8 @@ import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/tasks/support/Query";
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+import IdentifyParameters from "@arcgis/core/rest/support/IdentifyParameters";
+import * as identify from "@arcgis/core/rest/identify";
 
 @Component({
   selector: 'app-map-view',
@@ -31,15 +33,6 @@ import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 })
 export class MapViewComponent implements OnInit, OnDestroy {
   private view!: MapView;
-  private fLTramBienApDangDiem!: FeatureLayer;
-  private fLTramBienApDangVung!: FeatureLayer;
-  private fLDuongDayDien!: FeatureLayer;
-  private fLCotDien!: FeatureLayer;
-  private fLCotDienHighLight: __esri.Handle | null = null;
-
-  private fLView!: __esri.FeatureLayerView;
-
-  private iDFLCotDientHighLight!: number;
 
   @ViewChild('mapViewNode', { static: true }) private mapViewEl!: ElementRef;
 
@@ -104,8 +97,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
     const map = new Map({
       basemap: basemap,
-      layers: [mapServerMLD],
     });
+    map.add(mapServerMLD)
 
     const view = new MapView({
       container: container,
@@ -119,31 +112,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
       highlightOptions: {
         color: 'orange',
       },
-    });
-
-    view.whenLayerView(mapServerMLD).then((layerView) => {
-      mapServerMLD.sublayers.forEach((sublayer) => {
-        sublayer.createFeatureLayer()
-        .then((featureLayer) => {
-          switch(featureLayer.layerId) {
-            case 3:
-              this.fLTramBienApDangVung = featureLayer;
-              break;
-            case 2:
-              this.fLCotDien = featureLayer;
-              break;
-            case 1:
-              this.fLDuongDayDien = featureLayer;
-              break;
-            case 0:
-              this.fLTramBienApDangDiem = featureLayer;
-              break;
-          }
-          return featureLayer.load();
-        }).then((featureLayer) => {
-          sublayer.popupTemplate = featureLayer.createPopupTemplate();
-        })
-      });
     });
 
     view.when(() => {
@@ -160,107 +128,66 @@ export class MapViewComponent implements OnInit, OnDestroy {
     return this.view.when();
   }
 
+  private highLight(event: any) {
+    let params = new IdentifyParameters();
+    params.tolerance = 3;
+    params.layerIds = [0, 1, 2, 3];
+    params.layerOption = "all";
+    params.width = this.view.width;
+    params.height = this.view.height;
+    params.geometry = this.view.toMap(event);
+    params.mapExtent = this.view.extent;
+    params.returnGeometry = true;
+    params.returnFieldName = false;
+    identify.identify(environment.mapUrl.mapServerMLDUrl, params)
+    .then((response) => {
+      let results = response.results;
+      if(results.length != 0) {
+        setTimeout(() => {
+          this.changeMouseCursor('pointer');
+        })
+        for(let i = 0; i < results.length; i++) {
+          if(results[i].layerId == 2) {
+            const feature = results[i].feature;
+            const _highlightPoint = new SimpleMarkerSymbol({
+              size: '9px',
+              outline: {
+                color: [255, 204, 0, 0.8],
+                width: 3,
+              },
+            });
+            this.view.graphics.removeAll();
+            feature.symbol = _highlightPoint;
+            this.view.graphics.add(feature);
+          }
+        }
+      }
+      console.log(results);
+    }).catch(err => {
+      console.log(err); 
+    }).finally(() => {
+    });
+  }
+
   ngOnInit(): void {
     const serverInfo = new ServerInfo(environment.serverInfo);
     const userInfo = environment.userInfo;
     from(esriId.generateToken(serverInfo, userInfo)).subscribe((result) => {
       from(this.initializeMap(result.token)).subscribe(() => {
         console.log('The map is ready.');
-        this.view.on('pointer-move', (event) => {
-          this.highLightCotDien(event);
+        this.view.on("pointer-move", (event) => {
+          this.changeMouseCursor('default');
+          this.view.graphics.removeAll();
         });
-        // this.view.on('pointer-move', (event) => {
-        //   console.log('pointer-move');
-        // });
-        // this.view.on('pointer-down', (event) => {
-        //   console.log('pointer-down');
-        // });
-        // this.view.on('click', (event) => {
-        //   this.view.hitTest(event).then((response) => {
-        //     const query = new Query();
-        //     query.where = "MA_COT = 'TTDMD1_CD_0014025'";
-        //     query.returnGeometry = true;
-        //     query.outFields = [ "MA_COT" ];
-        //     this.fLCotDien.queryFeatures(query).then(result => {
-        //       console.log(result);
-        //       const feature = result.features[0];
-        //       this.view.goTo({
-        //         target: feature.geometry,
-        //         zoom: 17,
-        //       },
-        //       {
-        //         duration: 5000, // Duration of animation will be 3 seconds
-        //       }).catch((error) => {
-        //         console.error(error);
-        //       });
-        //       //Flash
-        //       const _highlightPoint = new SimpleMarkerSymbol({
-        //         size: '8px',
-        //         outline: {
-        //           color: [255, 204, 0, 0.8],
-        //           width: 3,
-        //         },
-        //       });
-        //       if(this.view.graphics.length > 1){
-        //         this.view.graphics.removeAt(this.view.graphics.length - 1);
-        //       }
-        //       feature.symbol = _highlightPoint;
-        //       this.view.graphics.add(feature);
-        //       var kt = 0;
-        //       setInterval(() => {
-        //         if (kt < 9) {
-        //           this.view.graphics.getItemAt(this.view.graphics.length - 1).visible =
-        //             !this.view.graphics.getItemAt(this.view.graphics.length - 1).visible;
-        //           kt++;
-        //         }
-        //       }, 500);
-        //     })
-        //   });
-        // });
+        this.view.on("pointer-move", ["Shift"], (event) => {
+          this.highLight(event);
+        });
       });
     });
   }
 
   private changeMouseCursor(cursor: string) {
     this.mapViewEl.nativeElement.style.cursor = cursor;
-  }
-
-  private highLightCotDien(event: any) {
-    const opts = {
-      include: this.fLCotDien,
-    };
-    // console.log(opts);
-    this.view.hitTest(event, opts).then((response) => {
-      console.log(response)
-      // check if a feature is returned from the hurricanesLayer
-      if (response.results.length) {
-        this.changeMouseCursor('pointer');
-        const graphic = response.results[0].graphic;
-        const iD = graphic.attributes.OBJECTID;
-        if (this.fLCotDien && this.iDFLCotDientHighLight !== iD) {
-          this.fLCotDienHighLight!.remove();
-          this.fLCotDienHighLight = null;
-          return;
-        }
-        if (this.fLCotDienHighLight) {
-          return;
-        }
-        // this.fLCotDienHighLight = this.fLViewPhimAnh.highlight(iD);
-        // this.iDFLPhimAnhHighLight = iD;
-      } else {
-        this.changeMouseCursor('default');
-        // this.onHoverPhimAnhEvent.emit(
-        //   new PopupPhimAnh({
-        //     screenCoordinate: new ScreenCordinate({ x: event.x, y: event.y }),
-        //     isShow: false,
-        //   })
-        // );
-        // if (this.fLPhimAnhHighLight) {
-        //   this.fLPhimAnhHighLight.remove();
-        //   this.fLPhimAnhHighLight = null;
-        // }
-      }
-    });
   }
 
   ngOnDestroy(): void {
