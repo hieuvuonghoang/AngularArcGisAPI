@@ -10,7 +10,7 @@ import { MapViewComponent } from './map/map-view/map-view.component';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    BrowserAnimationsModule,
+    BrowserAnimationsModule
   ],
   providers: [],
   bootstrap: [AppComponent],

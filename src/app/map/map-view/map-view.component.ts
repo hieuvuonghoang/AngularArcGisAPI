@@ -4,8 +4,6 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
-  Output,
-  EventEmitter,
 } from '@angular/core';
 import esriId from '@arcgis/core/identity/IdentityManager';
 import ServerInfo from '@arcgis/core/identity/ServerInfo';
@@ -14,24 +12,19 @@ import TileInfo from '@arcgis/core/layers/support/TileInfo';
 import Map from '@arcgis/core/Map';
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 import Point from '@arcgis/core/geometry/Point';
-import LayerList from '@arcgis/core/widgets/LayerList';
 import Basemap from '@arcgis/core/Basemap';
 import esriConfig from '@arcgis/core/config.js';
-import { debounceTime, delay, distinctUntilChanged, from, fromEvent, interval, map, Observable, of, Subject, switchMap, takeUntil } from 'rxjs';
+import { debounceTime, from, Observable, Subject, switchMap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
-import Query from "@arcgis/core/tasks/support/Query";
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import IdentifyParameters from "@arcgis/core/rest/support/IdentifyParameters";
 import * as identify from "@arcgis/core/rest/identify";
-import BasemapToggle from "@arcgis/core/widgets/BasemapToggle";
-import TileLayer from "@arcgis/core/layers/TileLayer";
-import Layer from "@arcgis/core/layers/Layer";
-import Portal from "@arcgis/core/portal/Portal";
-import PortalBasemapsSource from "@arcgis/core/widgets/BasemapGallery/support/PortalBasemapsSource";
 import Expand from "@arcgis/core/widgets/Expand";
 import BasemapGallery from "@arcgis/core/widgets/BasemapGallery";
+import IdentifyResult from "@arcgis/core/tasks/support/IdentifyResult";
+import Graphic from "@arcgis/core/Graphic";
 
 @Component({
   selector: 'app-map-view',
@@ -69,10 +62,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
     serviceUrls.forEach((element) => {
       esriConfig.request.interceptors?.push({
         urls: element,
-        before: function (params) {
+        before: (params) => {
+          this.changeMouseCursor('progress');
           params.requestOptions.query = params.requestOptions.query || {};
           params.requestOptions.query.token = token;
         },
+        after: (response) => {
+          this.changeMouseCursor('default');
+        }
       });
     });
     //#endregion
@@ -170,9 +167,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
     view.ui.add(bgExpand, "bottom-left");
 
-    view.watch("spatialReference", ()=> {
-      console.log(view.spatialReference.wkid);
-    });
+    // view.watch("spatialReference", ()=> {
+    //   console.log(view.spatialReference.wkid);
+    // });
 
     this._view = view;
 
@@ -194,36 +191,17 @@ export class MapViewComponent implements OnInit, OnDestroy {
           this.changeMouseCursor('default');
           this._view.graphics.removeAll();
         });
+
         const subject = new Subject<any>();
+
         subject.pipe(
-          debounceTime(100),
+          debounceTime(300), //Khi con trỏ chuột di chuyển trên bản đồ, sau khi dừng lại 300ms mới thực hiện query identify
           switchMap(result => {
-            return this.highLight(result);
-          })
+            return this.identifyQuery(result);
+          }) //switchMap sử dụng để loại bỏ những query identify cũ chưa trả về kết quả khi những query mới được tạo
         ).subscribe(response => {
-          let results = response.results;
-          // console.log(results);
-          if(results.length !== 0) {
-            for(let i = 0; i < results.length; i++) {
-              if(results[i].layerId == 2) {
-                this.changeMouseCursor('pointer');
-                const feature = results[i].feature;
-                const _highlightPoint = new SimpleMarkerSymbol({
-                  size: '15px',
-                  outline: {
-                    color: [124, 252 , 0],
-                    width: 2,
-                  },
-                });
-                this._view.graphics.removeAll();
-                feature.symbol = _highlightPoint;
-                this._view.graphics.add(feature);
-              }
-            }
-          } else {
-            this.changeMouseCursor('default');
-            this._view.graphics.removeAll();
-          }
+          let results = response.results as IdentifyResult[];
+          this.highLight(results);
         });
 
         this._view.on("pointer-move", (event) => {
@@ -233,11 +211,82 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  private highLight(identifyResults: IdentifyResult[]) {
+    if(identifyResults.length !== 0) {
+      this.changeMouseCursor('pointer');
+      for(let i = 0; i < identifyResults.length; i++) {
+        switch(identifyResults[i].layerId) {
+          case 0:
+          case 2:
+            this.highLightPoint(identifyResults[i]);
+            break;
+          case 1:
+            this.highLightPolyLine(identifyResults[i]);
+            break;
+          case 3:
+            this.highLightPolygon(identifyResults[i]);
+            break;
+        }
+      }
+    } else {
+      this.changeMouseCursor('default');
+      this._view.graphics.removeAll();
+    }
+  }
+
+  private highLightPoint(identifyResult: IdentifyResult) {
+    const markerSymbol = {
+      type: "simple-marker",
+      color: [226, 119, 40],
+      outline: {
+        color: [255, 255, 255],
+        width: 2
+      }
+    };
+    const pointGraphic = new Graphic({
+      geometry:  identifyResult.feature.geometry,
+      symbol: markerSymbol
+    });
+    this._view.graphics.add(pointGraphic);
+  }
+
+  private highLightPolyLine(identifyResult: IdentifyResult) {
+    const lineSymbol = {
+      type: "simple-line", // autocasts as new SimpleLineSymbol()
+      color: [226, 119, 40], // RGB color values as an array
+      width: 2
+    };
+    const polylineGraphic = new Graphic({
+      geometry: identifyResult.feature.geometry, // Add the geometry created in step 4
+      symbol: lineSymbol, // Add the symbol created in step 5
+    });
+    this._view.graphics.add(polylineGraphic);
+  }
+
+  private highLightPolygon(identifyResult: IdentifyResult) {
+    const fillSymbol = {
+      type: "simple-fill", // autocasts as new SimpleFillSymbol()
+      color: [227, 139, 79, 0.8],
+      outline: {
+        // autocasts as new SimpleLineSymbol()
+        color: [255, 255, 255],
+        width: 1
+      }
+    };
+    const polygonGraphic = new Graphic({
+      geometry: identifyResult.feature.geometry,
+      symbol: fillSymbol
+    });
+    this._view.graphics.add(polygonGraphic);
+  }
+
   private changeMouseCursor(cursor: string) {
     this.mapViewEl.nativeElement.style.cursor = cursor;
   }
 
-  private highLight(event: any): Observable<any> {
+
+
+  private identifyQuery(event: any): Observable<any> {
     let params = new IdentifyParameters();
     params.tolerance = 5;
     params.layerIds = [0, 1, 2, 3];
