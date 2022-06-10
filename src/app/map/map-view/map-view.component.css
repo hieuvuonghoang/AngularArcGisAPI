@@ -2,5 +2,14 @@
 .esri-view {
   height: 100%;
   width: 100%;
-  border: 1px solid #fafafa !important;
+}
+
+.esri-view .esri-view-surface--inset-outline:focus::after {
+  outline: 0px !important;
+  border: 0px !important;
+}
+
+.esri-ui-bottom-right {
+  flex-direction: column !important;
+  flex-wrap: initial !important;
 }

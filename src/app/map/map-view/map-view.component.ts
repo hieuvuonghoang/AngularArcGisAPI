@@ -24,6 +24,8 @@ import Expand from '@arcgis/core/widgets/Expand';
 import BasemapGallery from '@arcgis/core/widgets/BasemapGallery';
 import IdentifyResult from '@arcgis/core/tasks/support/IdentifyResult';
 import Graphic from '@arcgis/core/Graphic';
+import Zoom from '@arcgis/core/widgets/Zoom';
+import Locate from '@arcgis/core/widgets/Locate';
 
 @Component({
   selector: 'app-map-view',
@@ -66,6 +68,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
         },
         after: (response) => {
           this.changeMouseCursor('default');
+          console.log(response);
         },
       });
     });
@@ -164,6 +167,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
       autoCollapse: true,
     });
 
+    let locateWidget = new Locate({
+      view: view,
+    });
+
+    view.ui.move('zoom', 'bottom-right');
+
+    view.ui.add([locateWidget], 'bottom-right');
+
     view.ui.add(bgExpand, 'bottom-left');
 
     view.watch('spatialReference', () => {
@@ -233,7 +244,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private highLightPoint(identifyResult: IdentifyResult) {
     const markerSymbol = {
       type: 'simple-marker',
-      color: [226, 119, 40],
+      color: [0, 255, 255],
       outline: {
         color: [255, 255, 255],
         width: 2,
@@ -249,7 +260,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private highLightPolyLine(identifyResult: IdentifyResult) {
     const lineSymbol = {
       type: 'simple-line', // autocasts as new SimpleLineSymbol()
-      color: [226, 119, 40], // RGB color values as an array
+      color: [0, 255, 255], // RGB color values as an array
       width: 2,
     };
     const polylineGraphic = new Graphic({
@@ -262,7 +273,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private highLightPolygon(identifyResult: IdentifyResult) {
     const fillSymbol = {
       type: 'simple-fill', // autocasts as new SimpleFillSymbol()
-      color: [227, 139, 79, 0.8],
+      color: [0, 255, 255, 0.8],
       outline: {
         // autocasts as new SimpleLineSymbol()
         color: [255, 255, 255],
