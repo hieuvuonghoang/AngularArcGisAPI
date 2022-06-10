@@ -284,8 +284,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.mapViewEl.nativeElement.style.cursor = cursor;
   }
 
-
-
   private identifyQuery(event: any): Observable<any> {
     let params = new IdentifyParameters();
     params.tolerance = 5;
