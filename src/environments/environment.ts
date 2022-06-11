@@ -9,6 +9,8 @@ export const environment = {
       'https://gis.npt.com.vn/server/rest/services/Hosted/VietNam_Basemap_20220516/VectorTileServer',
     mapServerMLDUrl:
       'https://gis.npt.com.vn/server/rest/services/MangLuoiTTD/MapServer',
+    mapServerPhimAnhUrl:
+    'https://gis.npt.com.vn/server/rest/services/MangLuoiDien/PhimAnh/MapServer'
   },
   userInfo: {
     username: 'portaladmin',

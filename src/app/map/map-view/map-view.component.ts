@@ -24,8 +24,10 @@ import Expand from '@arcgis/core/widgets/Expand';
 import BasemapGallery from '@arcgis/core/widgets/BasemapGallery';
 import IdentifyResult from '@arcgis/core/tasks/support/IdentifyResult';
 import Graphic from '@arcgis/core/Graphic';
-import Zoom from '@arcgis/core/widgets/Zoom';
 import Locate from '@arcgis/core/widgets/Locate';
+import * as projection from "@arcgis/core/geometry/projection";
+import SpatialReference from "@arcgis/core/geometry/SpatialReference";
+import * as webMercatorUtils from "@arcgis/core/geometry/support/webMercatorUtils";
 
 @Component({
   selector: 'app-map-view',
@@ -49,7 +51,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
     const centerPoint = new Point(environment.centerPoint);
     const baseMapUrl = environment.mapUrl.baseMapUrl;
     const mapServerMLDUrl = environment.mapUrl.mapServerMLDUrl;
-    const serviceUrls = [baseMapUrl, mapServerMLDUrl];
+    const mapServerPhimAnhUrl = environment.mapUrl.mapServerPhimAnhUrl;
+    const serviceUrls = [baseMapUrl, mapServerMLDUrl, mapServerPhimAnhUrl];
 
     //#region  "esriConfig"
     esriConfig.assetsPath = './assets';
@@ -61,14 +64,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
       esriConfig.request.interceptors?.push({
         urls: element,
         before: (params) => {
-          console.log(params);
+          // console.log(params);
           this.changeMouseCursor('progress');
           params.requestOptions.query = params.requestOptions.query || {};
           params.requestOptions.query.token = token;
         },
         after: (response) => {
           this.changeMouseCursor('default');
-          console.log(response);
+          // console.log(response);
         },
       });
     });
@@ -119,6 +122,17 @@ export class MapViewComponent implements OnInit, OnDestroy {
       ],
     });
 
+    const mapServerPhimAnh = new MapImageLayer({
+      url: mapServerPhimAnhUrl,
+      title: 'Phim ảnh',
+      sublayers: [
+        {
+          id: 0,
+          title: 'Phim ảnh'
+        }
+      ]
+    })
+
     mapServerMLD.allSublayers.forEach((subLayer) => {
       subLayer.createFeatureLayer().then((featureLayer) => {
         switch (featureLayer.layerId) {
@@ -143,6 +157,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
 
     map.add(mapServerMLD);
+    map.add(mapServerPhimAnh);
 
     const view = new MapView({
       container: container,
@@ -192,9 +207,39 @@ export class MapViewComponent implements OnInit, OnDestroy {
     from(esriId.generateToken(serverInfo, userInfo)).subscribe((result) => {
       from(this.initializeMap(result.token)).subscribe(() => {
         console.log('The map is ready.');
+
+        
+
         this._view.on('pointer-move', (event) => {
           this.changeMouseCursor('default');
           this._view.graphics.removeAll();
+        });
+
+        this._view.on('click', (event) => {
+          console.log(event.mapPoint);
+          console.log(this._view.scale);
+
+          const inSpatialReference = new SpatialReference({
+            wkid: this._view.spatialReference.wkid //PE_GCS_ED_1950
+          });
+          
+          const outSpatialReference = new SpatialReference({
+            wkid: 3405
+          });
+          
+          const geogtrans = projection.getTransformations(inSpatialReference, outSpatialReference, this._view.extent);
+          let point = event.mapPoint;
+          console.log(projection.project(point, outSpatialReference));
+          // geogtrans.forEach(function(geogtran, index) {
+          //   geogtran.steps.forEach(function(step, index) {
+          //     console.log(step.wkid);
+          //     const outSpatialReferenceStep = new SpatialReference({
+          //       wkid: step.wkid
+          //     });
+          //     point = projection.project(point, outSpatialReferenceStep);
+          //     console.log(point);
+          //   });
+          // });
         });
 
         const subject = new Subject<any>();
@@ -225,6 +270,20 @@ export class MapViewComponent implements OnInit, OnDestroy {
         switch (identifyResults[i].layerId) {
           case 0:
           case 2:
+            // console.log(identifyResults[i]);
+
+            const inSpatialReference = new SpatialReference({
+              wkid: this._view.spatialReference.wkid //PE_GCS_ED_1950
+            });
+            
+            const outSpatialReference = new SpatialReference({
+              wkid: 3405
+            });
+            
+            const geogtrans = projection.getTransformations(inSpatialReference, outSpatialReference, this._view.extent);
+
+            console.log(projection.project(identifyResults[i].feature.geometry, outSpatialReference));
+
             this.highLightPoint(identifyResults[i]);
             break;
           case 1:
