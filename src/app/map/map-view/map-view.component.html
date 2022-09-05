@@ -1,4 +1,31 @@
-<div #mapViewNode></div>
+<div #mapViewNode>
+  <div class="moveable-pane">
+    <div class="pane">
+      <div class="flex-container-col">
+        <div class="flex-container" (mouseenter) ="mouseEnter()" (mouseleave) = "mouseLeave()">
+          <div class="moveable-img">
+            <button [ngClass]="btnOp ? 'btn-op' : 'btn-nop'"><div class="oGZkwf" style="background-size:24px;height:24px;width:24px"></div></button>
+            <img src="https://lh5.googleusercontent.com/p/AF1QipOwYQVVwO83T37BrPdSLxrAfIMuOmv5rvNzbTBg=w262-h104-p-k-no"/>
+          </div>
+          <div class="moveable-img">
+            <button [ngClass]="btnOp ? 'btn-op' : 'btn-nop'"><div class="oGZkwf" style="background-size:24px;height:24px;width:24px"></div></button>
+            <img src="https://lh5.googleusercontent.com/p/AF1QipOwYQVVwO83T37BrPdSLxrAfIMuOmv5rvNzbTBg=w262-h104-p-k-no"/>
+          </div>
+          <div class="moveable-img">
+            <button [ngClass]="btnOp ? 'btn-op' : 'btn-nop'"><div class="oGZkwf" style="background-size:24px;height:24px;width:24px"></div></button>
+            <img src="https://lh5.googleusercontent.com/p/AF1QipOwYQVVwO83T37BrPdSLxrAfIMuOmv5rvNzbTBg=w262-h104-p-k-no"/>
+          </div>
+          <div class="moveable-img">
+            <button [ngClass]="btnOp ? 'btn-op' : 'btn-nop'"><div class="oGZkwf" style="background-size:24px;height:24px;width:24px"></div></button>
+            <img src="https://lh5.googleusercontent.com/p/AF1QipOwYQVVwO83T37BrPdSLxrAfIMuOmv5rvNzbTBg=w262-h104-p-k-no"/>
+          </div>
+        </div>
+        <h4>Trạm 220kV Cà Mau</h4>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="divBottomRight">
   <div id="widgetLocate"></div>
   <div id="widgetZoom"></div>

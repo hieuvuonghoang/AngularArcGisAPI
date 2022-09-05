@@ -14,7 +14,7 @@ export const environment = {
   },
   userInfo: {
     username: 'portaladmin',
-    password: 'EVN.NPT.2022',
+    password: '!EVNNPT2022!',
   },
   serverInfo: {
     server: 'https://gis.npt.com.vn/server/rest/services',
@@ -23,9 +23,9 @@ export const environment = {
     shortLivedTokenValidity: 30,
   },
   centerPoint: {
-    x: 704653.664132111,
-    y: 1209061.7257997172,
-    spatialReference: { wkid: 3405 },
+    x: 11694719.833312226,
+    y: 1028930.1145095925,
+    spatialReference: { wkid: 102100 },
   },
   scale: 30000,
 };

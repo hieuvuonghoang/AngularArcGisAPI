@@ -13,3 +13,59 @@
   flex-direction: column !important;
   flex-wrap: initial !important;
 }
+
+.moveable-pane {
+  position: absolute;
+  top: 300px;
+  left: 500px;
+  z-index: 1;
+  display: block;
+}
+
+.pane {
+  width: 300px;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 1px 2px rgb(60 64 67 / 30%), 0 2px 6px 2px rgb(60 64 67 / 15%);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.flex-container {
+  display: flex;
+  position: relative;
+  height: 104px;
+  cursor: pointer;
+}
+
+.flex-container-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.moveable-img {
+  position: relative;
+  left: -264px;
+  margin-right: 2px;
+}
+
+.moveable-img > button {
+  position: absolute;
+  width: 36px;
+  height: 100%;
+  border: none;
+  background: linear-gradient(to left,rgba(0,0,0,0.7),transparent);
+  cursor: pointer;
+}
+
+.btn-op {
+  opacity: 1;
+}
+
+.btn-nop {
+  opacity: 0;
+}
+
+.oGZkwf {
+  background-image: url(https://www.gstatic.com/images/icons/material/system_gm/1x/keyboard_arrow_right_white_24dp.png);
+}

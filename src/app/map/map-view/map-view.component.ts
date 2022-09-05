@@ -208,8 +208,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
       from(this.initializeMap(result.token)).subscribe(() => {
         console.log('The map is ready.');
 
-        
-
         this._view.on('pointer-move', (event) => {
           this.changeMouseCursor('default');
           this._view.graphics.removeAll();
@@ -217,19 +215,24 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
         this._view.on('click', (event) => {
           console.log(event.mapPoint);
-          console.log(this._view.scale);
+          // console.log(this._view.scale);
 
-          const inSpatialReference = new SpatialReference({
-            wkid: this._view.spatialReference.wkid //PE_GCS_ED_1950
-          });
+          // const inSpatialReference = new SpatialReference({
+          //   wkid: this._view.spatialReference.wkid //PE_GCS_ED_1950
+          // });
           
-          const outSpatialReference = new SpatialReference({
-            wkid: 3405
-          });
+          // const outSpatialReference = new SpatialReference({
+          //   wkid: 3405
+          // });
+
+          // projection.load().then(() => {
+            
+          // })
           
-          const geogtrans = projection.getTransformations(inSpatialReference, outSpatialReference, this._view.extent);
-          let point = event.mapPoint;
-          console.log(projection.project(point, outSpatialReference));
+          // const geogtrans = projection.getTransformations(inSpatialReference, outSpatialReference, this._view.extent);
+          // let point = event.mapPoint;
+          // let a = projection.project(point, outSpatialReference) as __esri.Point;
+          // console.log(a);
           // geogtrans.forEach(function(geogtran, index) {
           //   geogtran.steps.forEach(function(step, index) {
           //     console.log(step.wkid);
@@ -242,23 +245,23 @@ export class MapViewComponent implements OnInit, OnDestroy {
           // });
         });
 
-        const subject = new Subject<any>();
+        // const subject = new Subject<any>();
 
-        subject
-          .pipe(
-            debounceTime(300), //Khi con trỏ chuột di chuyển trên bản đồ, sau khi dừng lại 300ms mới thực hiện query identify
-            switchMap((result) => {
-              return this.identifyQuery(result);
-            }) //switchMap sử dụng để loại bỏ những query identify cũ chưa trả về kết quả khi những query mới được tạo
-          )
-          .subscribe((response) => {
-            let results = response.results as IdentifyResult[];
-            this.highLight(results);
-          });
+        // subject
+        //   .pipe(
+        //     debounceTime(300), //Khi con trỏ chuột di chuyển trên bản đồ, sau khi dừng lại 300ms mới thực hiện query identify
+        //     switchMap((result) => {
+        //       return this.identifyQuery(result);
+        //     }) //switchMap sử dụng để loại bỏ những query identify cũ chưa trả về kết quả khi những query mới được tạo
+        //   )
+        //   .subscribe((response) => {
+        //     let results = response.results as IdentifyResult[];
+        //     this.highLight(results);
+        //   });
 
-        this._view.on('pointer-move', (event) => {
-          subject.next(event);
-        });
+        // this._view.on('pointer-move', (event) => {
+        //   subject.next(event);
+        // });
       });
     });
   }
@@ -368,4 +371,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this._view.destroy();
     }
   }
+
+  mouseEnter(): void {
+    this.btnOp = true;
+  }
+
+  mouseLeave(): void {
+    this.btnOp = false;
+  }
+
+  btnOp: boolean = false;
 }
