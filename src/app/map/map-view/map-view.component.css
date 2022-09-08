@@ -13,3 +13,10 @@
   flex-direction: column !important;
   flex-wrap: initial !important;
 }
+
+div.absolute {
+  position: absolute;
+  width: 200px;
+  height: 100px;
+  border: 3px solid #73ad21;
+}

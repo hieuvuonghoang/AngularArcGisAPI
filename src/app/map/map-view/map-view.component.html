@@ -1,4 +1,13 @@
-<div #mapViewNode></div>
+<div #mapViewNode>
+  <div
+    class="absolute"
+    [ngStyle]="{ 'top.px': topExp }"
+    [ngStyle]="{ 'right.px': rightExp }"
+  >
+    This div element has position: absolute;
+  </div>
+</div>
+<div id="divCCWidget"></div>
 <div id="divBottomRight">
   <div id="widgetLocate"></div>
   <div id="widgetZoom"></div>

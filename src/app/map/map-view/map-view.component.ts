@@ -26,6 +26,9 @@ import IdentifyResult from '@arcgis/core/tasks/support/IdentifyResult';
 import Graphic from '@arcgis/core/Graphic';
 import Zoom from '@arcgis/core/widgets/Zoom';
 import Locate from '@arcgis/core/widgets/Locate';
+import CoordinateConversion from '@arcgis/core/widgets/CoordinateConversion';
+import LayerList from '@arcgis/core/widgets/LayerList';
+import Search from '@arcgis/core/widgets/Search';
 
 @Component({
   selector: 'app-map-view',
@@ -38,6 +41,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private _fLTramBienAp!: FeatureLayer;
   private _fLDuongDayDien!: FeatureLayer;
   private _fLTranBienApDangVung!: FeatureLayer;
+  private _fLPhimAnh!: FeatureLayer;
+  public topExp: number = 80;
+  public rightExp: number = 10;
 
   @ViewChild('mapViewNode', { static: false }) private mapViewEl!: ElementRef;
 
@@ -49,7 +55,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
     const centerPoint = new Point(environment.centerPoint);
     const baseMapUrl = environment.mapUrl.baseMapUrl;
     const mapServerMLDUrl = environment.mapUrl.mapServerMLDUrl;
-    const serviceUrls = [baseMapUrl, mapServerMLDUrl];
+    const mapServerPhimAnhUrl = environment.mapUrl.mapServerPhimAnhUrl;
+    const serviceUrls = [baseMapUrl, mapServerMLDUrl, mapServerPhimAnhUrl];
 
     //#region  "esriConfig"
     esriConfig.assetsPath = './assets';
@@ -61,14 +68,12 @@ export class MapViewComponent implements OnInit, OnDestroy {
       esriConfig.request.interceptors?.push({
         urls: element,
         before: (params) => {
-          console.log(params);
           this.changeMouseCursor('progress');
           params.requestOptions.query = params.requestOptions.query || {};
           params.requestOptions.query.token = token;
         },
         after: (response) => {
           this.changeMouseCursor('default');
-          console.log(response);
         },
       });
     });
@@ -119,6 +124,17 @@ export class MapViewComponent implements OnInit, OnDestroy {
       ],
     });
 
+    const mapServerPhimAnh = new MapImageLayer({
+      url: mapServerPhimAnhUrl,
+      title: 'Phim ảnh',
+      sublayers: [
+        {
+          id: 0,
+          title: 'Phim ảnh',
+        },
+      ],
+    });
+
     mapServerMLD.allSublayers.forEach((subLayer) => {
       subLayer.createFeatureLayer().then((featureLayer) => {
         switch (featureLayer.layerId) {
@@ -138,11 +154,23 @@ export class MapViewComponent implements OnInit, OnDestroy {
       });
     });
 
-    const map = new Map({
-      basemap: baseMapThree,
+    mapServerPhimAnh.allSublayers.forEach((subLayer) => {
+      subLayer.createFeatureLayer().then((featureLayer) => {
+        switch (featureLayer.layerId) {
+          case 0:
+            this._fLPhimAnh = featureLayer;
+            break;
+        }
+      });
     });
 
-    map.add(mapServerMLD);
+    const map = new Map({
+      basemap: baseMapThree,
+      layers: [mapServerMLD, mapServerPhimAnh],
+    });
+
+    // map.add(mapServerMLD);
+    // map.add(mapServerPhimAnh);
 
     const view = new MapView({
       container: container,
@@ -152,6 +180,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
       },
       scale: scale,
       center: centerPoint,
+      highlightOptions: {
+        color: [255, 255, 0, 1],
+        haloOpacity: 0.9,
+        fillOpacity: 0.2,
+      },
     });
 
     const basemapGallery = new BasemapGallery({
@@ -170,6 +203,33 @@ export class MapViewComponent implements OnInit, OnDestroy {
     let locateWidget = new Locate({
       view: view,
     });
+
+    let layerList = new LayerList({
+      view: view,
+    });
+
+    // Adds widget below other elements in the top left corner of the view
+    view.ui.add(layerList, {
+      position: 'top-left',
+    });
+
+    const searchWidget = new Search({
+      view: view,
+    });
+    // Adds the search widget below other elements in
+    // the top left corner of the view
+    view.ui.add(searchWidget, {
+      position: 'top-left',
+      index: 2,
+    });
+
+    // let ccWidget = new CoordinateConversion({
+    //   view: view,
+    //   container: 'divCCWidget',
+    // });
+
+    // Adds widget in the bottom left corner of the view
+    // view.ui.add(ccWidget, 'bottom-left');
 
     view.ui.move('zoom', 'bottom-right');
 
@@ -192,40 +252,57 @@ export class MapViewComponent implements OnInit, OnDestroy {
     from(esriId.generateToken(serverInfo, userInfo)).subscribe((result) => {
       from(this.initializeMap(result.token)).subscribe(() => {
         console.log('The map is ready.');
-        this._view.on('pointer-move', (event) => {
-          this.changeMouseCursor('default');
-          this._view.graphics.removeAll();
+        // this._view.on('pointer-move', (event) => {
+        //   this.changeMouseCursor('default');
+        //   this._view.graphics.removeAll();
+        // });
+
+        this._view.on('click', (event) => {
+          console.log(event.mapPoint.x);
+          console.log(event.mapPoint.y);
         });
 
-        const subject = new Subject<any>();
+        // const subject = new Subject<any>();
 
-        subject
-          .pipe(
-            debounceTime(300), //Khi con trỏ chuột di chuyển trên bản đồ, sau khi dừng lại 300ms mới thực hiện query identify
-            switchMap((result) => {
-              return this.identifyQuery(result);
-            }) //switchMap sử dụng để loại bỏ những query identify cũ chưa trả về kết quả khi những query mới được tạo
-          )
-          .subscribe((response) => {
-            let results = response.results as IdentifyResult[];
-            this.highLight(results);
-          });
+        // subject
+        //   .pipe(
+        //     debounceTime(300), //Khi con trỏ chuột di chuyển trên bản đồ, sau khi dừng lại 300ms mới thực hiện query identify
+        //     switchMap((result) => {
+        //       return this.identifyQueryMLD(result);
+        //     }) //switchMap sử dụng để loại bỏ những query identify cũ chưa trả về kết quả khi những query mới được tạo
+        //   )
+        //   .subscribe((response) => {
+        //     let results = response.results as IdentifyResult[];
+        //     this.highLightMLD(results);
+        //   });
 
-        this._view.on('pointer-move', (event) => {
-          subject.next(event);
-        });
+        // subject
+        //   .pipe(
+        //     debounceTime(300), //Khi con trỏ chuột di chuyển trên bản đồ, sau khi dừng lại 300ms mới thực hiện query identify
+        //     switchMap((result) => {
+        //       return this.identifyQueryPhimAnh(result);
+        //     }) //switchMap sử dụng để loại bỏ những query identify cũ chưa trả về kết quả khi những query mới được tạo
+        //   )
+        //   .subscribe((response) => {
+        //     let results = response.results as IdentifyResult[];
+        //     this.highLightPhimAnh(results);
+        //   });
+
+        // this._view.on('pointer-move', (event) => {
+        //   subject.next(event);
+        // });
       });
     });
   }
 
-  private highLight(identifyResults: IdentifyResult[]) {
+  private highLightMLD(identifyResults: IdentifyResult[]) {
     if (identifyResults.length !== 0) {
       this.changeMouseCursor('pointer');
       for (let i = 0; i < identifyResults.length; i++) {
         switch (identifyResults[i].layerId) {
           case 0:
           case 2:
-            this.highLightPoint(identifyResults[i]);
+            this.highLightPoint(identifyResults[i], 2);
             break;
           case 1:
             this.highLightPolyLine(identifyResults[i]);
@@ -241,13 +318,29 @@ export class MapViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  private highLightPoint(identifyResult: IdentifyResult) {
+  private highLightPhimAnh(identifyResults: IdentifyResult[]) {
+    if (identifyResults.length !== 0) {
+      this.changeMouseCursor('pointer');
+      for (let i = 0; i < identifyResults.length; i++) {
+        switch (identifyResults[i].layerId) {
+          case 0:
+            this.highLightPoint(identifyResults[i], 15);
+            break;
+        }
+      }
+    } else {
+      this.changeMouseCursor('default');
+      this._view.graphics.removeAll();
+    }
+  }
+
+  private highLightPoint(identifyResult: IdentifyResult, width: number) {
     const markerSymbol = {
       type: 'simple-marker',
       color: [0, 255, 255],
       outline: {
         color: [255, 255, 255],
-        width: 2,
+        width: width,
       },
     };
     const pointGraphic = new Graphic({
@@ -291,7 +384,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.mapViewEl.nativeElement.style.cursor = cursor;
   }
 
-  private identifyQuery(event: any): Observable<any> {
+  private identifyQueryMLD(event: any): Observable<any> {
     let params = new IdentifyParameters();
     params.tolerance = 5;
     params.layerIds = [0, 1, 2, 3];
@@ -302,6 +395,21 @@ export class MapViewComponent implements OnInit, OnDestroy {
     params.mapExtent = this._view.extent;
     params.returnGeometry = true;
     return from(identify.identify(environment.mapUrl.mapServerMLDUrl, params));
+  }
+
+  private identifyQueryPhimAnh(event: any): Observable<any> {
+    let params = new IdentifyParameters();
+    params.tolerance = 5;
+    params.layerIds = [0];
+    params.layerOption = 'visible';
+    params.width = this._view.width;
+    params.height = this._view.height;
+    params.geometry = this._view.toMap(event);
+    params.mapExtent = this._view.extent;
+    params.returnGeometry = true;
+    return from(
+      identify.identify(environment.mapUrl.mapServerPhimAnhUrl, params)
+    );
   }
 
   ngOnDestroy(): void {
