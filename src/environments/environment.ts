@@ -13,8 +13,8 @@ export const environment = {
       'https://gis.npt.com.vn/server/rest/services/MangLuoiDien/PhimAnh/MapServer',
   },
   userInfo: {
-    username: 'portal',
-    password: 'EVNNPT.2022!',
+    username: 'portaladmin',
+    password: '!EVNNPT2022!',
   },
   serverInfo: {
     server: 'https://gis.npt.com.vn/server/rest/services',
@@ -22,8 +22,8 @@ export const environment = {
     shortLivedTokenValidity: 30,
   },
   centerPoint: {
-    x: 11694761.714454936,
-    y: 1028934.7847140391,
+    x: 11694719.833312226,
+    y: 1028930.1145095925,
     spatialReference: { wkid: 102100 },
   },
   scale: 30000,
